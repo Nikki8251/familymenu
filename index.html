@@ -273,12 +273,75 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans SC',sans-seri
 
 /* reset config link */
 .reset-link{font-size:11px;color:var(--text3);text-align:center;margin-top:1rem;cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+
+/* ── Splash ── */
+#splash {
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 0;
+  transition: opacity 0.6s ease;
+}
+#splash.hide { opacity: 0; pointer-events: none; }
+@keyframes float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
+#splash svg { animation: float 3.5s ease-in-out infinite; }
+.splash-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 28px; font-weight: 700;
+  letter-spacing: 4px; color: var(--text);
+  margin-bottom: 10px;
+}
+.splash-tagline {
+  font-size: 13px; color: var(--text3);
+  letter-spacing: 2px; margin-bottom: 3rem;
+}
+.splash-sub {
+  font-size: 11px; color: var(--text3);
+  letter-spacing: 1.5px; margin-bottom: 2.5rem;
+  opacity: 0.7;
+}
+.splash-btn {
+  padding: 13px 40px;
+  background: var(--text); color: var(--bg);
+  border: none; border-radius: 30px;
+  font-size: 14px; font-family: 'Noto Serif SC', serif;
+  font-weight: 600; letter-spacing: 2px;
+  cursor: pointer; transition: opacity 0.15s, transform 0.15s;
+}
+.splash-btn:hover { opacity: 0.85; transform: scale(1.03); }
+.splash-btn:active { transform: scale(0.97); }
+.splash-names {
+  margin-top: 1.8rem;
+  font-size: 11px; color: var(--text3);
+  letter-spacing: 1px;
+}
+
 </style>
 </head>
 <body>
 
 <!-- ── Setup / Config Screen ── -->
-<div id="setup-screen">
+
+<div id="splash">
+  <svg width="110" height="110" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" style="margin-bottom:1.8rem;">
+    <rect x="0" y="0" width="300" height="300" rx="60" fill="#1A1A18"/>
+    <rect x="32" y="32" width="236" height="236" rx="44" fill="#FDFCF8"/>
+    <circle cx="150" cy="148" r="72" fill="#1A1A18"/>
+    <circle cx="150" cy="148" r="58" fill="#FDFCF8"/>
+    <rect x="137" y="76" width="26" height="72" rx="4" fill="#1A1A18"/>
+    <rect x="112" y="113" width="76" height="14" rx="4" fill="#1A1A18"/>
+    <rect x="137" y="158" width="26" height="52" rx="4" fill="#1A1A18"/>
+    <ellipse cx="150" cy="214" rx="36" ry="10" fill="#1A1A18"/>
+    <rect x="32" y="32" width="236" height="236" rx="44" fill="none" stroke="#1A1A18" stroke-width="3"/>
+  </svg>
+  <div class="splash-title">今天吃什么</div>
+  <div class="splash-tagline">只要吃得好，人生没烦恼</div>
+  <button class="splash-btn" onclick="enterApp()">开始点菜</button>
+  <div class="splash-names">宁宝 &amp; yh</div>
+</div>
+
+<div id="setup-screen" style="display:none;">
   <div class="setup-logo">🍽 今天吃什么</div>
   <div class="setup-sub">宁宝 &amp; yh 的家庭菜单</div>
 
@@ -548,7 +611,7 @@ function buildFilters() {
   Object.entries(CATS).forEach(([key, c]) => {
     const el = document.createElement('span');
     el.className = 'cat-pill' + (key===curFilter ? ' active' : '');
-    el.textContent = (c.emoji ? c.emoji+' ' : '') + c.label;
+    el.textContent = c.label;
     el.onclick = () => { curFilter = key; buildFilters(); renderGrid(); };
     wrap.appendChild(el);
   });
@@ -568,7 +631,7 @@ function renderGrid() {
       <div class="check-dot">✓</div>
       <span class="dish-emoji">${d.emoji||'🍽'}</span>
       <div class="dish-name">${d.name}</div>
-      <span class="dish-badge badge-${d.cat}">${CATS[d.cat]?.emoji||''} ${CATS[d.cat]?.label||d.cat}</span>
+      <span class="dish-badge badge-${d.cat}">${CATS[d.cat]?.label||d.cat}</span>
       ${whoHtml}
     </div>`;
   }).join('') + `<div class="add-card" onclick="openModal()"><div style="font-size:22px;">＋</div><div>添加菜品</div></div>`;
@@ -747,6 +810,13 @@ function toast(msg) {
 }
 
 // ── Auto-connect if saved ─────────────────────────────────
+
+function enterApp() {
+  const splash = document.getElementById('splash');
+  splash.classList.add('hide');
+  setTimeout(() => { splash.style.display = 'none'; }, 650);
+}
+
 (async () => {
   const HARDCODED_URL = 'https://ppbelepkvrkkenpwdbhb.supabase.co';
   const HARDCODED_KEY = 'sb_publishable_WNEI56TGEIlHEn3F7KpwxA_0vnqymxa';
