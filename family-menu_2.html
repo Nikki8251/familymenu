@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>今天吃什么 · 宁宝 & yh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&family=Noto+Sans+SC:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #FDFCF8; --surface: #FFFFFF; --surface2: #F6F4EF;
+  --border: rgba(0,0,0,0.07); --border2: rgba(0,0,0,0.13);
+  --text: #1A1A18; --text2: #6B6A65; --text3: #A09F99;
+  --green: #4E8A1E; --green-bg: #EEF6E4; --green-dk: #2E5A0E;
+  --amber: #B07015; --amber-bg: #FDF0DB; --amber-dk: #7A4C0A;
+  --coral: #C44E2A; --coral-bg: #FAEAE4; --coral-dk: #8C3218;
+  --purple: #6B5ED6; --purple-bg: #EFEDFC; --purple-dk: #3D3399;
+  --pink: #C0446E; --pink-bg: #FAEBF1; --pink-dk: #8B2B4C;
+  --teal: #1A8F6A; --teal-bg: #E2F5EE; --teal-dk: #0D5E43;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#18180F; --surface:#242418; --surface2:#2E2E22;
+  --border:rgba(255,255,255,0.08); --border2:rgba(255,255,255,0.14);
+  --text:#F0EFE8; --text2:#A8A79E; --text3:#6E6D65;
+  --green-bg:#1A2E0A; --green-dk:#8FD45A;
+  --amber-bg:#2E1E05; --amber-dk:#DEAD6A;
+  --coral-bg:#2E1208; --coral-dk:#F09070;
+  --purple-bg:#1A1640; --purple-dk:#B0A8F5;
+  --pink-bg:#2A0F1A; --pink-dk:#F09ABB;
+  --teal-bg:#071E16; --teal-dk:#5ED4A8;
+}}
+html,body{height:100%; -webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans SC',sans-serif;font-size:15px;min-height:100vh;}
+
+/* ── setup screen ── */
+#setup-screen{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  min-height:100vh; padding:2rem;
+  background:var(--bg);
+}
+.setup-logo{font-family:'Noto Serif SC',serif;font-size:28px;font-weight:700;letter-spacing:3px;margin-bottom:6px;}
+.setup-sub{font-size:12px;color:var(--text3);letter-spacing:1px;margin-bottom:2.5rem;}
+.setup-card{
+  width:100%; max-width:360px;
+  background:var(--surface);
+  border:0.5px solid var(--border2);
+  border-radius:18px;
+  padding:1.75rem 1.5rem;
+}
+.setup-card h2{font-size:15px;font-weight:500;margin-bottom:1.25rem;color:var(--text);}
+.setup-step{
+  background:var(--surface2);
+  border-radius:12px;
+  padding:1rem 1.25rem;
+  margin-bottom:1rem;
+  font-size:13px;
+  line-height:1.8;
+  color:var(--text2);
+}
+.setup-step strong{color:var(--text);font-weight:500;}
+.setup-step code{
+  font-family:monospace;
+  background:var(--surface);
+  padding:1px 5px;
+  border-radius:4px;
+  font-size:12px;
+  border:0.5px solid var(--border2);
+  color:var(--coral);
+}
+.f-label{font-size:11px;color:var(--text3);letter-spacing:0.5px;margin-bottom:4px;display:block;margin-top:14px;}
+.f-input{
+  width:100%; padding:9px 12px;
+  border:0.5px solid var(--border2); border-radius:10px;
+  font-size:13px; background:var(--surface); color:var(--text);
+  font-family:'Noto Sans SC',sans-serif; outline:none;
+}
+.f-input:focus{border-color:var(--text3);}
+.f-input.err{border-color:var(--coral);}
+.connect-btn{
+  width:100%; margin-top:1.25rem; padding:11px;
+  background:var(--text); color:var(--bg);
+  border:none; border-radius:12px; font-size:14px;
+  font-family:'Noto Sans SC',sans-serif; cursor:pointer;
+  transition:opacity 0.15s;
+}
+.connect-btn:disabled{opacity:0.5;cursor:not-allowed;}
+.setup-err{font-size:12px;color:var(--coral);margin-top:8px;text-align:center;min-height:16px;}
+
+/* ── app ── */
+#app{display:none; max-width:680px; margin:0 auto; padding:0 0 5.5rem;}
+.header{padding:2.2rem 1.5rem 1.2rem; text-align:center;}
+.header h1{font-family:'Noto Serif SC',serif;font-size:23px;font-weight:700;letter-spacing:3px;}
+.header p{font-size:11px;color:var(--text3);margin-top:4px;letter-spacing:1px;}
+.sync-dot{
+  display:inline-block; width:6px; height:6px; border-radius:50%;
+  background:var(--text3); margin-left:6px; vertical-align:middle;
+  transition:background 0.3s;
+}
+.sync-dot.live{background:var(--green);}
+
+.bottom-nav{
+  position:fixed; bottom:0; left:0; right:0;
+  background:var(--surface); border-top:0.5px solid var(--border2);
+  display:flex; z-index:50;
+  padding-bottom:env(safe-area-inset-bottom,0);
+}
+.nav-btn{
+  flex:1; padding:10px 0 12px; display:flex; flex-direction:column;
+  align-items:center; gap:3px; background:none; border:none; cursor:pointer;
+  color:var(--text3); font-size:10px; font-family:'Noto Sans SC',sans-serif;
+  transition:color 0.15s;
+}
+.nav-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+.nav-btn.active{color:var(--text);}
+.nav-btn.active svg{stroke-width:2.1;}
+
+.tab-panel{display:none; padding:0 1.25rem;}
+.tab-panel.active{display:block;}
+
+/* cat filters */
+.cat-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.2rem;}
+.cat-pill{
+  padding:5px 13px; border-radius:20px; font-size:12px;
+  border:0.5px solid var(--border2); background:var(--surface);
+  color:var(--text2); cursor:pointer; transition:all 0.12s;
+  font-family:'Noto Sans SC',sans-serif; white-space:nowrap; user-select:none;
+}
+.cat-pill.active{background:var(--text);color:var(--bg);border-color:transparent;}
+
+/* dish grid */
+.dishes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:1rem;}
+.dish-card{
+  background:var(--surface); border:0.5px solid var(--border);
+  border-radius:14px; padding:14px; cursor:pointer;
+  transition:border-color 0.12s,background 0.12s; position:relative; user-select:none;
+}
+.dish-card:active{transform:scale(0.97);}
+.dish-card.sel-light   {border:1.5px solid var(--green);  background:var(--green-bg);}
+.dish-card.sel-homecook{border:1.5px solid var(--amber);  background:var(--amber-bg);}
+.dish-card.sel-hotpot  {border:1.5px solid var(--coral);  background:var(--coral-bg);}
+.dish-card.sel-bread   {border:1.5px solid var(--amber);  background:var(--amber-bg);}
+.dish-card.sel-dessert {border:1.5px solid var(--purple); background:var(--purple-bg);}
+.dish-emoji{font-size:26px;margin-bottom:7px;display:block;}
+.dish-name{font-size:14px;font-weight:500;color:var(--text);line-height:1.3;}
+.dish-badge{display:inline-block;margin-top:5px;font-size:10px;padding:2px 7px;border-radius:8px;}
+.badge-light   {background:var(--green-bg);  color:var(--green-dk);}
+.badge-homecook{background:var(--amber-bg);  color:var(--amber-dk);}
+.badge-hotpot  {background:var(--coral-bg);  color:var(--coral-dk);}
+.badge-bread   {background:var(--amber-bg);  color:var(--amber-dk);}
+.badge-dessert {background:var(--purple-bg); color:var(--purple-dk);}
+.dish-who{display:flex;gap:4px;margin-top:7px;flex-wrap:wrap;}
+.wt-nb{font-size:10px;padding:1px 7px;border-radius:8px;background:var(--pink-bg);color:var(--pink-dk);}
+.wt-yh{font-size:10px;padding:1px 7px;border-radius:8px;background:var(--teal-bg);color:var(--teal-dk);}
+.check-dot{
+  position:absolute;top:10px;right:10px;width:18px;height:18px;border-radius:50%;
+  display:none;align-items:center;justify-content:center;font-size:10px;font-weight:600;
+}
+.dish-card[class*="sel-"] .check-dot{display:flex;}
+.sel-light    .check-dot{background:var(--green);  color:#fff;}
+.sel-homecook .check-dot{background:var(--amber);  color:#fff;}
+.sel-hotpot   .check-dot{background:var(--coral);  color:#fff;}
+.sel-bread    .check-dot{background:var(--amber);  color:#fff;}
+.sel-dessert  .check-dot{background:var(--purple); color:#fff;}
+.add-card{
+  background:var(--surface2); border:1px dashed var(--border2);
+  border-radius:14px; padding:14px; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  min-height:110px; gap:5px; color:var(--text3); font-size:12px;
+  transition:all 0.12s;
+}
+.add-card:hover{color:var(--text2);background:var(--surface);}
+
+/* stats */
+.stats-row{display:flex;gap:8px;margin-bottom:1.2rem;}
+.stat-card{flex:1;background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:12px 14px;}
+.stat-label{font-size:10px;color:var(--text3);margin-bottom:3px;letter-spacing:0.5px;}
+.stat-val{font-size:26px;font-weight:600;color:var(--text);line-height:1;}
+.stat-card.nb .stat-val{color:var(--pink);}
+.stat-card.yh .stat-val{color:var(--teal);}
+
+/* order list */
+.order-list{background:var(--surface);border:0.5px solid var(--border);border-radius:14px;overflow:hidden;}
+.order-item{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-bottom:0.5px solid var(--border);}
+.order-item:last-child{border-bottom:none;}
+.order-emoji{font-size:20px;flex-shrink:0;margin-top:1px;}
+.order-info{flex:1;min-width:0;}
+.order-name{font-size:14px;font-weight:500;}
+.order-ings{font-size:11px;color:var(--text3);margin-top:2px;line-height:1.5;}
+.voter-row{display:flex;gap:5px;margin-top:8px;align-items:center;flex-wrap:wrap;}
+.voter-label{font-size:10px;color:var(--text3);}
+.voter-btn{
+  padding:3px 12px;border-radius:12px;border:0.5px solid var(--border2);
+  background:none;font-size:11px;cursor:pointer;color:var(--text2);
+  font-family:'Noto Sans SC',sans-serif;transition:all 0.1s;
+}
+.voter-btn.nb-on{background:var(--pink-bg);color:var(--pink-dk);border-color:var(--pink);}
+.voter-btn.yh-on{background:var(--teal-bg);color:var(--teal-dk);border-color:var(--teal);}
+.del-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:15px;padding:4px;border-radius:6px;line-height:1;flex-shrink:0;}
+.del-btn:hover{background:var(--surface2);color:var(--text);}
+.empty-state{padding:2.5rem 1rem;text-align:center;color:var(--text3);font-size:13px;line-height:1.8;}
+
+/* shopping */
+.shop-panel{background:var(--surface);border:0.5px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:1rem;}
+.shop-head{padding:11px 16px;font-size:11px;color:var(--text3);letter-spacing:0.8px;border-bottom:0.5px solid var(--border);background:var(--surface2);}
+.shop-items-area{padding:12px 16px;display:flex;flex-wrap:wrap;gap:7px;min-height:48px;}
+.shop-chip{
+  display:flex;align-items:center;gap:4px;padding:5px 10px;border-radius:20px;
+  font-size:12px;background:var(--surface2);border:0.5px solid var(--border);
+  color:var(--text2);cursor:pointer;transition:all 0.1s;user-select:none;
+}
+.shop-chip.done{text-decoration:line-through;opacity:0.4;}
+.chip-del{font-size:14px;color:var(--text3);line-height:1;cursor:pointer;padding:0 1px;}
+.chip-del:hover{color:var(--coral);}
+.extra-add-row{display:flex;gap:8px;padding:10px 16px;border-top:0.5px solid var(--border);}
+.extra-input{
+  flex:1;padding:8px 12px;border:0.5px solid var(--border2);border-radius:10px;
+  font-size:13px;background:var(--surface);color:var(--text);
+  font-family:'Noto Sans SC',sans-serif;outline:none;
+}
+.extra-input:focus{border-color:var(--text3);}
+.extra-add-btn{
+  padding:8px 16px;border-radius:10px;background:var(--text);color:var(--bg);
+  border:none;cursor:pointer;font-size:13px;font-family:'Noto Sans SC',sans-serif;white-space:nowrap;
+}
+.shop-clear-btn{
+  display:block;width:100%;padding:10px;text-align:center;
+  font-size:12px;color:var(--text3);background:none;border:none;
+  border-top:0.5px solid var(--border);cursor:pointer;font-family:'Noto Sans SC',sans-serif;
+}
+.shop-clear-btn:hover{color:var(--coral);}
+
+/* modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:flex-end;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{
+  background:var(--surface);border-radius:20px 20px 0 0;
+  padding:1.5rem 1.5rem calc(1.5rem + env(safe-area-inset-bottom,0));
+  width:100%;max-width:680px;max-height:85vh;overflow-y:auto;
+  border:0.5px solid var(--border2);
+}
+.modal-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 1.2rem;}
+.modal h2{font-size:16px;font-weight:500;margin-bottom:1rem;}
+.form-row{margin-bottom:12px;}
+.form-label{font-size:11px;color:var(--text3);margin-bottom:4px;display:block;letter-spacing:0.5px;}
+.form-input,.form-select{
+  width:100%;padding:9px 12px;border:0.5px solid var(--border2);border-radius:10px;
+  font-size:14px;background:var(--surface);color:var(--text);
+  font-family:'Noto Sans SC',sans-serif;outline:none;
+}
+.form-input:focus,.form-select:focus{border-color:var(--text3);}
+.modal-actions{display:flex;gap:8px;margin-top:1rem;}
+.btn-cancel{flex:1;padding:10px;border:0.5px solid var(--border2);border-radius:10px;background:none;color:var(--text2);font-size:13px;cursor:pointer;font-family:'Noto Sans SC',sans-serif;}
+.btn-save{flex:2;padding:10px;border-radius:10px;background:var(--text);color:var(--bg);font-size:13px;border:none;cursor:pointer;font-family:'Noto Sans SC',sans-serif;}
+
+/* loading overlay */
+.loading{
+  position:fixed;inset:0;background:var(--bg);z-index:500;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+}
+.loading-text{font-size:13px;color:var(--text3);}
+.spinner{width:28px;height:28px;border:2px solid var(--border2);border-top-color:var(--text);border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* toast */
+.toast{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  background:var(--text);color:var(--bg);padding:8px 20px;border-radius:20px;
+  font-size:12px;opacity:0;transition:opacity 0.25s;z-index:300;white-space:nowrap;pointer-events:none;
+}
+.toast.show{opacity:1;}
+
+/* reset config link */
+.reset-link{font-size:11px;color:var(--text3);text-align:center;margin-top:1rem;cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+</style>
+</head>
+<body>
+
+<!-- ── Setup / Config Screen ── -->
+<div id="setup-screen">
+  <div class="setup-logo">🍽 今天吃什么</div>
+  <div class="setup-sub">宁宝 &amp; yh 的家庭菜单</div>
+
+  <div class="setup-card">
+    <h2>🔌 连接 Supabase 数据库</h2>
+
+    <div class="setup-step">
+      <strong>第一步：</strong>去 <strong>supabase.com</strong> 免费注册，新建一个项目
+    </div>
+    <div class="setup-step">
+      <strong>第二步：</strong>在项目的 <strong>SQL Editor</strong> 里运行下面这段建表 SQL：<br><br>
+      <code>create table dishes (id bigint generated always as identity primary key, name text, emoji text, cat text, ings text);</code><br><br>
+      <code>create table selected (dish_id bigint primary key, nb boolean default false, yh boolean default false);</code><br><br>
+      <code>create table extras (id bigint generated always as identity primary key, text text, done boolean default false, created_at timestamptz default now());</code><br><br>
+      然后在 <strong>Table Editor → 每张表 → RLS</strong> 里关闭 Row Level Security（或者添加 allow all policy）
+    </div>
+    <div class="setup-step">
+      <strong>第三步：</strong>在 <strong>Project Settings → API</strong> 里复制 URL 和 anon key 填到下面 👇
+    </div>
+
+    <label class="f-label">SUPABASE URL</label>
+    <input class="f-input" id="cfg-url" placeholder="https://xxxx.supabase.co" />
+    <label class="f-label">SUPABASE ANON KEY</label>
+    <input class="f-input" id="cfg-key" placeholder="eyJhbGci..." />
+    <div class="setup-err" id="cfg-err"></div>
+    <button class="connect-btn" id="connect-btn" onclick="connectSupabase()">连接并进入 →</button>
+  </div>
+</div>
+
+<!-- ── Loading ── -->
+<div class="loading" id="loading" style="display:none;">
+  <div class="spinner"></div>
+  <div class="loading-text">同步数据中…</div>
+</div>
+
+<!-- ── Main App ── -->
+<div id="app">
+  <div class="header">
+    <h1>🍽 今天吃什么</h1>
+    <p>宁宝 &amp; yh <span class="sync-dot" id="sync-dot"></span></p>
+  </div>
+
+  <div class="tab-panel active" id="tab-menu">
+    <div class="cat-filters" id="cat-filters"></div>
+    <div class="dishes-grid" id="dishes-grid"></div>
+  </div>
+
+  <div class="tab-panel" id="tab-order">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">已点</div><div class="stat-val" id="s-total">0</div></div>
+      <div class="stat-card nb"><div class="stat-label">宁宝</div><div class="stat-val" id="s-nb">0</div></div>
+      <div class="stat-card yh"><div class="stat-label">yh</div><div class="stat-val" id="s-yh">0</div></div>
+    </div>
+    <div class="order-list" id="order-list">
+      <div class="empty-state">还没点菜呢<br>去菜单里选吧 🥢</div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="tab-shop">
+    <div class="shop-panel">
+      <div class="shop-head">来自菜单的食材</div>
+      <div class="shop-items-area" id="shop-menu-items">
+        <span style="font-size:12px;color:var(--text3);">选好菜后自动出现</span>
+      </div>
+    </div>
+    <div class="shop-panel">
+      <div class="shop-head">额外购物清单</div>
+      <div class="shop-items-area" id="shop-extra-items"></div>
+      <div class="extra-add-row">
+        <input class="extra-input" id="extra-input" placeholder="牛奶、鸡蛋…回车添加" />
+        <button class="extra-add-btn" onclick="addExtra()">添加</button>
+      </div>
+      <button class="shop-clear-btn" onclick="clearDone()">清除已购完的</button>
+    </div>
+    <div class="reset-link" onclick="resetConfig()">重置数据库连接</div>
+  </div>
+</div>
+
+<nav class="bottom-nav" id="bottom-nav" style="display:none;">
+  <button class="nav-btn active" id="nav-menu" onclick="switchTab('menu')">
+    <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>菜单
+  </button>
+  <button class="nav-btn" id="nav-order" onclick="switchTab('order')">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 3 5-5"/></svg>今日菜单
+  </button>
+  <button class="nav-btn" id="nav-shop" onclick="switchTab('shop')">
+    <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>购物清单
+  </button>
+</nav>
+
+<!-- Add dish modal -->
+<div class="modal-bg" id="modal" onclick="handleBg(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2>添加菜品</h2>
+    <div class="form-row">
+      <label class="form-label">菜名</label>
+      <input class="form-input" id="f-name" placeholder="比如：白灼虾" />
+    </div>
+    <div class="form-row" style="display:flex;gap:8px;">
+      <div style="flex:0 0 75px;">
+        <label class="form-label">Emoji</label>
+        <input class="form-input" id="f-emoji" placeholder="🍤" />
+      </div>
+      <div style="flex:1;">
+        <label class="form-label">分类</label>
+        <select class="form-select" id="f-cat">
+          <option value="light">🥗 轻食低脂</option>
+          <option value="homecook">🍳 家常炒菜</option>
+          <option value="hotpot">🫕 火锅汤锅</option>
+          <option value="bread">🍞 面包烘焙</option>
+          <option value="dessert">🍮 甜品饮品</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">所需食材（逗号隔开）</label>
+      <input class="form-input" id="f-ings" placeholder="虾, 姜, 葱, 生抽" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-save" onclick="saveDish()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Config ──────────────────────────────────────────────
+const CATS = {
+  all:      { label:'全部',    emoji:'' },
+  light:    { label:'轻食低脂', emoji:'🥗' },
+  homecook: { label:'家常炒菜', emoji:'🍳' },
+  hotpot:   { label:'火锅汤锅', emoji:'🫕' },
+  bread:    { label:'面包烘焙', emoji:'🍞' },
+  dessert:  { label:'甜品饮品', emoji:'🍮' },
+};
+
+const DEFAULT_DISHES = [
+  {name:'鸡胸肉沙拉',    emoji:'🥗', cat:'light',    ings:'鸡胸肉,生菜,番茄,黄瓜,橄榄油'},
+  {name:'水煮蛋牛油果碗', emoji:'🥑', cat:'light',    ings:'牛油果,鸡蛋,藜麦,柠檬'},
+  {name:'番茄炒鸡蛋',    emoji:'🍅', cat:'homecook', ings:'番茄,鸡蛋,葱,盐,糖'},
+  {name:'红烧排骨',      emoji:'🍖', cat:'homecook', ings:'排骨,老抽,生抽,冰糖,八角,姜'},
+  {name:'蒜蓉西兰花',    emoji:'🥦', cat:'homecook', ings:'西兰花,大蒜,蚝油,盐'},
+  {name:'川味火锅',      emoji:'🫕', cat:'hotpot',   ings:'火锅底料,牛肉片,豆腐,金针菇,藕片,宽粉'},
+  {name:'番茄牛肉锅',    emoji:'🍲', cat:'hotpot',   ings:'牛腩,番茄,土豆,洋葱,胡萝卜'},
+  {name:'吐司面包',      emoji:'🍞', cat:'bread',    ings:'高筋面粉,酵母,牛奶,黄油,盐,糖'},
+  {name:'牛角可颂',      emoji:'🥐', cat:'bread',    ings:'高筋面粉,黄油,鸡蛋,牛奶,糖'},
+  {name:'芒果糯米饭',    emoji:'🥭', cat:'dessert',  ings:'芒果,糯米,椰浆,白糖'},
+  {name:'抹茶拿铁',      emoji:'🍵', cat:'dessert',  ings:'抹茶粉,牛奶,糖浆'},
+];
+
+// ── State ────────────────────────────────────────────────
+let sb = null;          // supabase client
+let dishes = [];        // [{id,name,emoji,cat,ings}]
+let selected = {};      // {dish_id: {nb,yh}}
+let extras = [];        // [{id,text,done}]
+let curFilter = 'all';
+let curTab = 'menu';
+let realtimeCh = null;
+
+// ── Supabase connect ─────────────────────────────────────
+async function connectSupabase() {
+  const url = document.getElementById('cfg-url').value.trim();
+  const key = document.getElementById('cfg-key').value.trim();
+  const errEl = document.getElementById('cfg-err');
+  const btn = document.getElementById('connect-btn');
+  errEl.textContent = '';
+  if (!url || !key) { errEl.textContent = '请填写 URL 和 Key'; return; }
+
+  btn.disabled = true;
+  btn.textContent = '连接中…';
+  try {
+    sb = supabase.createClient(url, key);
+    // test connection
+    const { error } = await sb.from('dishes').select('id').limit(1);
+    if (error) throw error;
+    localStorage.setItem('fm_url', url);
+    localStorage.setItem('fm_key', key);
+    await initApp();
+  } catch(e) {
+    errEl.textContent = '连接失败：' + (e.message || '请检查 URL/Key 及数据库表是否存在');
+    btn.disabled = false;
+    btn.textContent = '连接并进入 →';
+  }
+}
+
+async function initApp() {
+  showLoading(true);
+  await loadAll();
+  setupRealtime();
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('bottom-nav').style.display = 'flex';
+  showLoading(false);
+  buildFilters();
+  renderGrid();
+}
+
+function showLoading(v) {
+  document.getElementById('loading').style.display = v ? 'flex' : 'none';
+}
+
+// ── Load all data ────────────────────────────────────────
+async function loadAll() {
+  const [dRes, sRes, eRes] = await Promise.all([
+    sb.from('dishes').select('*').order('id'),
+    sb.from('selected').select('*'),
+    sb.from('extras').select('*').order('created_at'),
+  ]);
+  dishes = dRes.data || [];
+  // seed defaults if empty
+  if (dishes.length === 0) {
+    const { data } = await sb.from('dishes').insert(DEFAULT_DISHES).select();
+    dishes = data || [];
+  }
+  selected = {};
+  (sRes.data || []).forEach(r => { selected[r.dish_id] = {nb: r.nb, yh: r.yh}; });
+  extras = eRes.data || [];
+}
+
+// ── Realtime ─────────────────────────────────────────────
+function setupRealtime() {
+  if (realtimeCh) sb.removeChannel(realtimeCh);
+  realtimeCh = sb.channel('fm-live')
+    .on('postgres_changes', {event:'*', schema:'public', table:'dishes'}, () => reload('dishes'))
+    .on('postgres_changes', {event:'*', schema:'public', table:'selected'}, () => reload('selected'))
+    .on('postgres_changes', {event:'*', schema:'public', table:'extras'}, () => reload('extras'))
+    .subscribe(status => {
+      document.getElementById('sync-dot').classList.toggle('live', status === 'SUBSCRIBED');
+    });
+}
+
+async function reload(table) {
+  if (table === 'dishes') {
+    const { data } = await sb.from('dishes').select('*').order('id');
+    dishes = data || [];
+  } else if (table === 'selected') {
+    const { data } = await sb.from('selected').select('*');
+    selected = {};
+    (data || []).forEach(r => { selected[r.dish_id] = {nb: r.nb, yh: r.yh}; });
+  } else if (table === 'extras') {
+    const { data } = await sb.from('extras').select('*').order('created_at');
+    extras = data || [];
+  }
+  if (curTab === 'menu') renderGrid();
+  if (curTab === 'order') renderOrder();
+  if (curTab === 'shop')  renderShop();
+}
+
+// ── Tab ──────────────────────────────────────────────────
+function switchTab(t) {
+  curTab = t;
+  document.querySelectorAll('.tab-panel').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('nav-'+t).classList.add('active');
+  if (t==='order') renderOrder();
+  if (t==='shop')  renderShop();
+}
+
+// ── Filters ──────────────────────────────────────────────
+function buildFilters() {
+  const wrap = document.getElementById('cat-filters');
+  wrap.innerHTML = '';
+  Object.entries(CATS).forEach(([key, c]) => {
+    const el = document.createElement('span');
+    el.className = 'cat-pill' + (key===curFilter ? ' active' : '');
+    el.textContent = (c.emoji ? c.emoji+' ' : '') + c.label;
+    el.onclick = () => { curFilter = key; buildFilters(); renderGrid(); };
+    wrap.appendChild(el);
+  });
+}
+
+// ── Grid ─────────────────────────────────────────────────
+function renderGrid() {
+  const grid = document.getElementById('dishes-grid');
+  const list = curFilter==='all' ? dishes : dishes.filter(d => d.cat===curFilter);
+  grid.innerHTML = list.map(d => {
+    const sel = selected[d.id];
+    const selCls = sel ? ` sel-${d.cat}` : '';
+    const whoHtml = sel
+      ? `<div class="dish-who">${sel.nb?'<span class="wt-nb">宁宝</span>':''}${sel.yh?'<span class="wt-yh">yh</span>':''}</div>`
+      : '';
+    return `<div class="dish-card${selCls}" onclick="toggleDish(${d.id})">
+      <div class="check-dot">✓</div>
+      <span class="dish-emoji">${d.emoji||'🍽'}</span>
+      <div class="dish-name">${d.name}</div>
+      <span class="dish-badge badge-${d.cat}">${CATS[d.cat]?.emoji||''} ${CATS[d.cat]?.label||d.cat}</span>
+      ${whoHtml}
+    </div>`;
+  }).join('') + `<div class="add-card" onclick="openModal()"><div style="font-size:22px;">＋</div><div>添加菜品</div></div>`;
+}
+
+// ── Toggle dish ──────────────────────────────────────────
+async function toggleDish(id) {
+  if (selected[id]) {
+    delete selected[id];
+    renderGrid();
+    await sb.from('selected').delete().eq('dish_id', id);
+  } else {
+    selected[id] = {nb:false, yh:false};
+    renderGrid();
+    switchTab('order');
+    await sb.from('selected').upsert({dish_id:id, nb:false, yh:false});
+    toast('已加入今日菜单');
+  }
+}
+
+// ── Order ────────────────────────────────────────────────
+function renderOrder() {
+  const ids = Object.keys(selected).map(Number);
+  document.getElementById('s-total').textContent = ids.length;
+  document.getElementById('s-nb').textContent = ids.filter(id=>selected[id]?.nb).length;
+  document.getElementById('s-yh').textContent = ids.filter(id=>selected[id]?.yh).length;
+  const ol = document.getElementById('order-list');
+  if (!ids.length) { ol.innerHTML='<div class="empty-state">还没点菜呢<br>去菜单里选吧 🥢</div>'; return; }
+  ol.innerHTML = ids.map(id => {
+    const d = dishes.find(x=>x.id===id);
+    if (!d) return '';
+    const s = selected[id]||{};
+    const ings = d.ings ? d.ings.split(',').join('、') : '';
+    return `<div class="order-item">
+      <div class="order-emoji">${d.emoji||'🍽'}</div>
+      <div class="order-info">
+        <div class="order-name">${d.name}</div>
+        <div class="order-ings">${ings||'无需备料'}</div>
+        <div class="voter-row">
+          <span class="voter-label">谁要吃：</span>
+          <button class="voter-btn${s.nb?' nb-on':''}" onclick="toggleWho(${id},'nb')">宁宝</button>
+          <button class="voter-btn${s.yh?' yh-on':''}" onclick="toggleWho(${id},'yh')">yh</button>
+        </div>
+      </div>
+      <button class="del-btn" onclick="removeOrder(${id})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+async function toggleWho(id, who) {
+  if (!selected[id]) return;
+  selected[id][who] = !selected[id][who];
+  renderOrder(); renderGrid();
+  await sb.from('selected').upsert({dish_id:id, nb:selected[id].nb, yh:selected[id].yh});
+}
+
+async function removeOrder(id) {
+  delete selected[id];
+  renderOrder(); renderGrid();
+  await sb.from('selected').delete().eq('dish_id', id);
+}
+
+// ── Shopping ─────────────────────────────────────────────
+function renderShop() {
+  const ids = Object.keys(selected).map(Number);
+  const catMap = {};
+  ids.forEach(id => {
+    const d = dishes.find(x=>x.id===id);
+    if (!d||!d.ings) return;
+    if (!catMap[d.cat]) catMap[d.cat]=new Set();
+    d.ings.split(',').map(s=>s.trim()).filter(Boolean).forEach(i=>catMap[d.cat].add(i));
+  });
+  const menuArea = document.getElementById('shop-menu-items');
+  const entries = Object.entries(catMap);
+  if (!entries.length) {
+    menuArea.innerHTML='<span style="font-size:12px;color:var(--text3);">选好菜后自动出现</span>';
+  } else {
+    menuArea.innerHTML = entries.map(([cat, ings]) =>
+      `<div style="width:100%;margin-bottom:8px;">
+        <div style="font-size:10px;color:var(--text3);letter-spacing:0.5px;margin-bottom:5px;">${CATS[cat]?.emoji||''} ${CATS[cat]?.label||cat}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">${[...ings].map(i=>`<span class="shop-chip">${i}</span>`).join('')}</div>
+      </div>`
+    ).join('');
+  }
+  renderExtras();
+}
+
+function renderExtras() {
+  const area = document.getElementById('shop-extra-items');
+  if (!extras.length) {
+    area.innerHTML='<span style="font-size:12px;color:var(--text3);">添加额外要买的东西</span>';
+    return;
+  }
+  area.innerHTML = extras.map(e =>
+    `<span class="shop-chip${e.done?' done':''}" onclick="toggleExtra(${e.id})">
+      ${e.text}
+      <span class="chip-del" onclick="deleteExtra(event,${e.id})">×</span>
+    </span>`
+  ).join('');
+}
+
+async function addExtra() {
+  const input = document.getElementById('extra-input');
+  const raw = input.value.trim();
+  if (!raw) return;
+  const items = raw.split(/[，,、]+/).map(s=>s.trim()).filter(Boolean);
+  input.value = '';
+  const rows = items.map(text => ({text, done:false}));
+  const { data } = await sb.from('extras').insert(rows).select();
+  if (data) extras.push(...data);
+  renderExtras();
+}
+
+async function toggleExtra(id) {
+  const e = extras.find(x=>x.id===id);
+  if (!e) return;
+  e.done = !e.done;
+  renderExtras();
+  await sb.from('extras').update({done:e.done}).eq('id',id);
+}
+
+async function deleteExtra(ev, id) {
+  ev.stopPropagation();
+  extras = extras.filter(x=>x.id!==id);
+  renderExtras();
+  await sb.from('extras').delete().eq('id',id);
+}
+
+async function clearDone() {
+  const doneIds = extras.filter(e=>e.done).map(e=>e.id);
+  if (!doneIds.length) return;
+  extras = extras.filter(e=>!e.done);
+  renderExtras();
+  await sb.from('extras').delete().in('id', doneIds);
+}
+
+document.getElementById('extra-input').addEventListener('keydown', e => { if(e.key==='Enter') addExtra(); });
+
+// ── Modal ────────────────────────────────────────────────
+function openModal() { document.getElementById('modal').classList.add('open'); }
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function handleBg(e) { if(e.target===document.getElementById('modal')) closeModal(); }
+
+async function saveDish() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { toast('请填写菜名'); return; }
+  const emoji = document.getElementById('f-emoji').value.trim() || '🍽';
+  const cat   = document.getElementById('f-cat').value;
+  const raw   = document.getElementById('f-ings').value;
+  const ings  = raw ? raw.split(/[，,、]+/).map(s=>s.trim()).filter(Boolean).join(',') : '';
+  const { data, error } = await sb.from('dishes').insert({name,emoji,cat,ings}).select().single();
+  if (error) { toast('保存失败'); return; }
+  dishes.push(data);
+  closeModal();
+  ['f-name','f-emoji','f-ings'].forEach(id => document.getElementById(id).value='');
+  renderGrid();
+  toast('菜品已保存 🎉');
+}
+
+// ── Reset ────────────────────────────────────────────────
+function resetConfig() {
+  if (!confirm('确定重置数据库连接？')) return;
+  localStorage.removeItem('fm_url');
+  localStorage.removeItem('fm_key');
+  location.reload();
+}
+
+// ── Toast ────────────────────────────────────────────────
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ── Auto-connect if saved ─────────────────────────────────
+(async () => {
+  const url = localStorage.getItem('fm_url');
+  const key = localStorage.getItem('fm_key');
+  if (url && key) {
+    document.getElementById('setup-screen').style.display = 'none';
+    showLoading(true);
+    try {
+      sb = supabase.createClient(url, key);
+      const { error } = await sb.from('dishes').select('id').limit(1);
+      if (error) throw error;
+      await initApp();
+    } catch(e) {
+      showLoading(false);
+      localStorage.removeItem('fm_url');
+      localStorage.removeItem('fm_key');
+      document.getElementById('setup-screen').style.display = 'flex';
+    }
+  }
+})();
+</script>
+</body>
+</html>
