@@ -353,7 +353,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans SC',sans-seri
       </div>
       <button class="shop-clear-btn" onclick="clearDone()">清除已购完的</button>
     </div>
-    <div class="reset-link" onclick="resetConfig()">重置数据库连接</div>
+    
   </div>
 </div>
 
@@ -748,22 +748,19 @@ function toast(msg) {
 
 // ── Auto-connect if saved ─────────────────────────────────
 (async () => {
-  const url = localStorage.getItem('fm_url');
-  const key = localStorage.getItem('fm_key');
-  if (url && key) {
-    document.getElementById('setup-screen').style.display = 'none';
-    showLoading(true);
-    try {
-      sb = supabase.createClient(url, key);
-      const { error } = await sb.from('dishes').select('id').limit(1);
-      if (error) throw error;
-      await initApp();
-    } catch(e) {
-      showLoading(false);
-      localStorage.removeItem('fm_url');
-      localStorage.removeItem('fm_key');
-      document.getElementById('setup-screen').style.display = 'flex';
-    }
+  const HARDCODED_URL = 'https://ppbelepkvrkkenpwdbhb.supabase.co';
+  const HARDCODED_KEY = 'sb_publishable_WNEI56TGEIlHEn3F7KpwxA_0vnqymxa';
+  document.getElementById('setup-screen').style.display = 'none';
+  showLoading(true);
+  try {
+    sb = supabase.createClient(HARDCODED_URL, HARDCODED_KEY);
+    const { error } = await sb.from('dishes').select('id').limit(1);
+    if (error) throw error;
+    await initApp();
+  } catch(e) {
+    showLoading(false);
+    document.getElementById('setup-screen').style.display = 'flex';
+    document.getElementById('cfg-err').textContent = '数据库连接失败，请检查网络';
   }
 })();
 </script>
